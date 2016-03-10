@@ -2,6 +2,7 @@ package com.tuplejump.inventory
 
 import java.util.UUID
 
+//Changes made from NCounter in akka.crdt
 case class NCounter(
                      id: String = UUID.randomUUID.toString,
                      state: Map[String, Int] = Map.empty[String, Int]){

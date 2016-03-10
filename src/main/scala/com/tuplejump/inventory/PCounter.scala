@@ -1,5 +1,6 @@
 package com.tuplejump.inventory
 
+//Changes made from NCounter in akka.crdt
 case class PCounter( state: Int = 0) {
 
   val dataType: String = PCounter.dataType

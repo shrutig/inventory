@@ -1,5 +1,6 @@
 package com.tuplejump.inventory
 
+//Changes made from NCounter in akka.crdt
 case class PNCounter(
                       increments: PCounter,
                       decrements: NCounter) {
