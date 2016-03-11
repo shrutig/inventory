@@ -117,7 +117,7 @@ class NodeManager(terminal: String, inventory: Inventory)
       sender() ! VerifyAck(journal.list.last._1, journal.list.last._2)
       stay
     case Event(conflict: Conflict, ChatData(nodes)) =>
-      //TODO resolve conflict
+      //TODO resolve conflict: Tell customer and make items to 0 after checks
       stay
     case Event(verify: VerifyAck, ChatData(nodes)) =>
       val currentJournal = journal(sender())

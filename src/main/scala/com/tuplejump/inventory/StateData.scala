@@ -35,4 +35,4 @@ case class Change(code: String,
 
 case class Speak(text: String)
 
-case class Conflict(conflicts: mutable.ArrayBuffer[(String, Int)])
+case class Conflict(conflicts: mutable.ArrayBuffer[(String, String, Int)])

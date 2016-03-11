@@ -79,8 +79,8 @@ class Inventory(id: String) {
   }
 
   def applyJournal(journal: Seq[(Change, Long)]):
-  mutable.ArrayBuffer[(String, Int)] = {
-    val seq = scala.collection.mutable.ArrayBuffer.empty[(String, Int)]
+  mutable.ArrayBuffer[(String, String, Int)] = {
+    val seq = scala.collection.mutable.ArrayBuffer.empty[(String, String, Int)]
     journal.foreach { case (record, time) =>
       val newItemQty = new PNCounter(PCounter(record.PCounter.getOrElse(0)),
         NCounter("temp", Map(record.POSTerminal -> record.NCounter.getOrElse(0))))
@@ -88,9 +88,7 @@ class Inventory(id: String) {
         val qty =
           items((record.code, record.terminal)).quantity.merge(newItemQty)
         if (qty.value < 0) {
-          /*addItem(new Item("", "", new PNCounter(PCounter(-qty.value), NCounter())),
-            record.code, record.terminal)*/
-          seq += ((record.code, qty.value))
+          seq += ((record.code, record.terminal, qty.value))
         }
         items((record.code, record.terminal)).quantity = qty
       }
