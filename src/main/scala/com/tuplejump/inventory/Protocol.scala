@@ -7,15 +7,15 @@ sealed trait Event
 
 case class Start(nodes: List[ActorRef]) extends Event
 
-case class GoOnline() extends Event
+case object GoOnline extends Event
 
-case class GoOffline() extends Event
+case object GoOffline extends Event
 
-case class Show() extends Event
+case object Show extends Event
 
-case class Sync() extends Event
+case object Sync extends Event
 
-case class KillChat() extends Event
+case object KillChat extends Event
 
 case class VerifyAck(change: Change, time: Long) extends Event
 
@@ -25,7 +25,7 @@ case class Change(code: String,
                   terminal: String,
                   PCounter: Option[Int],
                   NCounter: Option[Int],
-                  POSTerminal: String) extends Event
+                  POSTerminal: String)
 
 case class Conflict(conflicts: mutable.ArrayBuffer[(String, String, Int)])
   extends Event
