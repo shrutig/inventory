@@ -21,7 +21,7 @@ class ConsoleCallBack(console: Console, list: IndexedSeq[ActorRef])
           return code=<string> terminal=terminal<int> """.stripMargin +
           """type=<string> make=<string> quantity=<int>
             |Purchase items :
-          purchase code=<string> terminal=terminal<int> quantity=<int>
+          purchase code=<string> terminal=terminal<int> quantity=<int> from <string>
             |Can Purchase items :
           canPurchase code=<string> terminal=terminal<int> quantity=<int>"""
           .stripMargin)
@@ -47,13 +47,13 @@ class ConsoleCallBack(console: Console, list: IndexedSeq[ActorRef])
         findActor(canPurchase.pOSTerminal) ! (canPurchase, console)
       case offline: String if offline.startsWith("offline") =>
         val node = offline.split("offline ")(1)
-        findActor(node) ! StopChat
+        findActor(node) ! GoOffline
       case online:String if online.startsWith("online") =>
         val node = online.split("online ")(1)
-        findActor(node) ! StartChat
+        findActor(node) ! GoOnline
       case show: String if show.startsWith("show") =>
         val node = show.split("show ")(1)
-        findActor(node) ! ("show", console)
+        findActor(node) ! (Show, console)
 
       case _ =>
         throw new IllegalArgumentException("Cannot parse the given statement")

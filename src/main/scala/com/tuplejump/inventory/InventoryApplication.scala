@@ -15,11 +15,20 @@ object InventoryApplication {
     val num = StdIn.readInt()
     val list = for (i <- 1 to num) yield {
       system.actorOf(NodeManager.props("terminal" + i,
-        new Inventory("terminal" + i)).
+        new InMemInventory("terminal" + i)).
         withDeploy(Deploy(scope = RemoteScope(address))), "terminal" + i)
     }
-    list.foreach(act => act ! CreateChat((list diff List(act)).toList))
-    val flag = true
+    list.foreach(act => act ! Start((list diff List(act)).toList))
+    /*val cloud = system.actorOf(NodeManager.props("terminal" + 1,
+      new InMemInventory("terminal" + 1)).
+      withDeploy(Deploy(scope = RemoteScope(address))), "terminal" + 1)
+    val list = for (i <- 2 to num) yield {
+      system.actorOf(NodeManager.props("terminal" + i,
+        new InMemInventory("terminal" + i)).
+        withDeploy(Deploy(scope = RemoteScope(address))), "terminal" + i)
+    }
+    cloud ! CreateChat(list.toList)
+    list.foreach(act => act ! CreateChat(List(cloud)))*/
     val builder: SettingsBuilder = new SettingsBuilder().ansi(true)
     builder.logging(true).logfile(System.getProperty("user.dir") +
       System.getProperty("file.separator") + "akka.log")
