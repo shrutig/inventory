@@ -36,18 +36,17 @@ class NodeManager(terminal: String, inventory: InMemInventory)
       placeOrder(purchase, nodes)
       stay
     case Event(
-    (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console),
-    Nodes(nodes)) =>
-        console.getShell.out.println(
-          inventory.canPlaceOrder(code, quantity, iTerminal))
+    (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console)) =>
+      console.getShell.out.println(
+        inventory.canPlaceOrder(code, quantity, iTerminal))
       stay
-    case Event((Show, console: Console), Nodes(nodes)) =>
+    case Event((Show, console: Console)) =>
       show(console)
-    case Event(Journal, Nodes(nodes)) =>
+    case Event(journal: Journal) =>
       stay
-    case Event(VerifyAck, Nodes(nodes)) =>
+    case Event(verify: VerifyAck) =>
       stay
-    case Event(Sync, Nodes(nodes)) =>
+    case Event(Sync) =>
       stay
   }
 
@@ -69,17 +68,17 @@ class NodeManager(terminal: String, inventory: InMemInventory)
       PNCounter(PCounter(add.quantity), NCounter())),
       add.itemCode,
       add.terminal)
-      nodes.foreach { act =>
-        val currentChanges = journal.getOrElse(act, Seq[(Change, Long)]())
-        journal += (act -> (currentChanges :+
-          (Change(
-            add.itemCode,
-            add.terminal,
-            Some(inventory.searchItem(add.itemCode, add.terminal)
-              .quantity.increments.value),
-            None,
-            add.terminal), now)))
-      }
+    nodes.foreach { act =>
+      val currentChanges = journal.getOrElse(act, Seq[(Change, Long)]())
+      journal += (act -> (currentChanges :+
+        (Change(
+          add.itemCode,
+          add.terminal,
+          Some(inventory.searchItem(add.itemCode, add.terminal)
+            .quantity.increments.value),
+          None,
+          add.terminal), now)))
+    }
   }
 
   def placeOrder(purchase: Purchase, nodes: List[ActorRef]) = {
@@ -88,25 +87,25 @@ class NodeManager(terminal: String, inventory: InMemInventory)
       purchase.quantity,
       purchase.pOSTerminal,
       purchase.terminal)
-      nodes.foreach { act =>
-        val currentChanges = journal.getOrElse(act, Seq[(Change, Long)]())
-        journal += (act -> (currentChanges :+
-          (Change(
-            purchase.itemCode,
-            purchase.terminal,
-            None,
-            Some(inventory.searchItem(purchase.itemCode, purchase.terminal)
-              .quantity.decrements.state(purchase.pOSTerminal)),
-            purchase.pOSTerminal), now)))
-      }
+    nodes.foreach { act =>
+      val currentChanges = journal.getOrElse(act, Seq[(Change, Long)]())
+      journal += (act -> (currentChanges :+
+        (Change(
+          purchase.itemCode,
+          purchase.terminal,
+          None,
+          Some(inventory.searchItem(purchase.itemCode, purchase.terminal)
+            .quantity.decrements.state(purchase.pOSTerminal)),
+          purchase.pOSTerminal), now)))
+    }
   }
 
   when(Online) {
-    case Event((Show, console: Console), Nodes(nodes)) =>
+    case Event((Show, console: Console)) =>
       show(console)
-    case Event(journal: Journal, Nodes(nodes)) =>
+    case Event(journal: Journal) =>
       val conflicts = inventory.applyJournal(journal.list)
-      if(conflicts.nonEmpty)
+      if (conflicts.nonEmpty)
         sender() ! Conflict(conflicts)
       sender() ! VerifyAck(journal.list.last._1, journal.list.last._2)
       stay
@@ -114,12 +113,12 @@ class NodeManager(terminal: String, inventory: InMemInventory)
       log.info("conflicts found")
       //TODO resolve conflict: Tell customer and make items to 0 after checks
       stay
-    case Event(verify: VerifyAck, Nodes(nodes)) =>
+    case Event(verify: VerifyAck) =>
       val currentJournal = journal(sender())
       val index = currentJournal.indexOf((verify.change, verify.time))
       journal(sender()) = currentJournal.drop(index)
       stay
-    case Event(Sync, Nodes(nodes)) =>
+    case Event(Sync) =>
       journal.foreach(act => act._1 ! Journal(journal(act._1)))
       stay
     case Event(add: Add, Nodes(nodes)) => addItem(add, nodes)
@@ -128,8 +127,7 @@ class NodeManager(terminal: String, inventory: InMemInventory)
       placeOrder(purchase, nodes)
       stay
     case Event(
-    (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console),
-    Nodes(nodes)) =>
+    (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console)) =>
       console.getShell.out.println(
         inventory.canPlaceOrder(code, quantity, iTerminal))
       stay
