@@ -30,16 +30,14 @@ class NodeManager(terminal: String, inventory: Inventory)
     case Event(StartChat, ChatData(nodes)) =>
       log.info("StartChat received while in ChatOffline state.")
       goto(ChatOnline) using ChatData(nodes)
-    case Event(add: Add, ChatData(nodes)) =>
-      if (add.terminal == terminal) addItem(add, nodes)
+    case Event(add: Add, ChatData(nodes)) => addItem(add, nodes)
       stay
     case Event(purchase: Purchase, ChatData(nodes)) =>
-      if (purchase.pOSTerminal == terminal) placeOrder(purchase, nodes)
+      placeOrder(purchase, nodes)
       stay
     case Event(
     (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console),
     ChatData(nodes)) =>
-      if (pOSTerminal == terminal)
         console.getShell.out.println(
           inventory.canPlaceOrder(code, quantity, iTerminal))
       stay
@@ -54,13 +52,11 @@ class NodeManager(terminal: String, inventory: Inventory)
   }
 
   def show(console: Console) = {
-    console.getShell.out.println()
     val info = inventory.getInfo
     info.foreach {
       case ((itemCode, terminalId), qty) =>
         console.getShell.out.println(itemCode + " " + terminalId + " " + qty)
     }
-    console.getShell.out.println()
     stay
   }
 
@@ -73,7 +69,6 @@ class NodeManager(terminal: String, inventory: Inventory)
       PNCounter(PCounter(add.quantity), NCounter())),
       add.itemCode,
       add.terminal)
-    if (add.terminal == terminal)
       nodes.foreach { act =>
         val currentChanges = journal.getOrElse(act, Seq[(Change, Long)]())
         journal += (act -> (currentChanges :+
@@ -93,7 +88,6 @@ class NodeManager(terminal: String, inventory: Inventory)
       purchase.quantity,
       purchase.pOSTerminal,
       purchase.terminal)
-    if (purchase.pOSTerminal == terminal)
       nodes.foreach { act =>
         val currentChanges = journal.getOrElse(act, Seq[(Change, Long)]())
         journal += (act -> (currentChanges :+
