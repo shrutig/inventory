@@ -22,7 +22,7 @@ class Inventory(id: String) {
   }
 
   def getInfo: mutable.HashMap[(String, String), Int] = {
-    for(item <- items) yield {
+    for (item <- items) yield {
       (item._1, item._2.getQuantity)
     }
   }
@@ -40,13 +40,13 @@ class Inventory(id: String) {
   def placeOrder(
                   code: String,
                   quantity: Int,
-                  node: String,
+                  pOSTerminal: String,
                   terminal: String): Boolean = {
     var isOrdered = false
     val item = searchItem(code, terminal)
     if (item != null) {
       if (item.getQuantity >= quantity) {
-        changeQuantity(code, -quantity, node, terminal)
+        changeQuantity(code, -quantity, pOSTerminal, terminal)
         isOrdered = true
       }
       else isOrdered = false
@@ -57,7 +57,6 @@ class Inventory(id: String) {
   def canPlaceOrder(
                      code: String,
                      quantity: Int,
-                     node: String,
                      terminal: String): Boolean = {
     var canOrder = false
     val item = searchItem(code, terminal)
@@ -77,6 +76,29 @@ class Inventory(id: String) {
       items(key).quantity =
         another.items(key).quantity.merge(items(key).quantity)
     }
+  }
+
+  def applyJournal(journal: Seq[(Change, Long)]):
+  mutable.ArrayBuffer[(String, Int)] = {
+    val seq = scala.collection.mutable.ArrayBuffer.empty[(String, Int)]
+    journal.foreach { case (record, time) =>
+      val newItemQty = new PNCounter(PCounter(record.PCounter.getOrElse(0)),
+        NCounter("temp", Map(record.POSTerminal -> record.NCounter.getOrElse(0))))
+      if (items.contains(record.code, record.terminal)) {
+        val qty =
+          items((record.code, record.terminal)).quantity.merge(newItemQty)
+        if (qty.value < 0) {
+          /*addItem(new Item("", "", new PNCounter(PCounter(-qty.value), NCounter())),
+            record.code, record.terminal)*/
+          seq += ((record.code, qty.value))
+        }
+        items((record.code, record.terminal)).quantity = qty
+      }
+      else {
+        items((record.code, record.terminal)) = new Item("", "", newItemQty)
+      }
+    }
+    seq
   }
 
 }

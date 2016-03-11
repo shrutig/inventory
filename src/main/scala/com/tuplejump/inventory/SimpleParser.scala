@@ -14,7 +14,7 @@ case class Add(itemCode: String,
 case class Purchase(itemCode: String,
                     terminal: String,
                     quantity: Int,
-                    returnBoolean: Boolean) extends Command
+                    pOSTerminal: String) extends Command
 
 case class Offline(terminal: String) extends Command
 
@@ -63,7 +63,7 @@ object SimpleParser extends RegexParsers with JavaTokenParsers {
     (ADD | RETURN) ~ (CODE ~> "=" ~> ident) ~ (TERMINAL ~> "=" ~> ident) ~
       (TYPE ~> "=" ~> ident).? ~
       (MAKE ~> "=" ~> ident).? ~ (QUANTITY ~> "=" ~> wholeNumber) ^^ {
-      case add ~ code ~ terminal ~ itemType ~ make ~ quantity =>
+      case a ~ code ~ terminal ~ itemType ~ make ~ quantity =>
         Add(
           code,
           terminal,
@@ -74,12 +74,10 @@ object SimpleParser extends RegexParsers with JavaTokenParsers {
 
   lazy val purchase: Parser[Purchase] =
     (PURCHASE | CAN_PURCHASE) ~ (CODE ~> "=" ~> ident) ~
-      (TERMINAL ~> "=" ~> ident) ~ (QUANTITY ~> "=" ~> wholeNumber) ^^ {
-      case p ~ code ~ terminal ~ quantity =>
-        if (p.eq("purchase"))
-          Purchase(code, terminal, quantity.toInt, false)
-        else
-          Purchase(code, terminal, quantity.toInt, true)
+      (TERMINAL ~> "=" ~> ident) ~ (QUANTITY ~> "=" ~> wholeNumber) ~
+      (FROM ~> ident) ^^ {
+      case p ~ code ~ terminal ~ quantity ~ from =>
+          Purchase(code, terminal, quantity.toInt, from)
     }
 
   protected val ADD = Keyword("add")
@@ -93,6 +91,7 @@ object SimpleParser extends RegexParsers with JavaTokenParsers {
   protected val CAN_PURCHASE = Keyword("canpurchase")
   protected val ONLINE = Keyword("online")
   protected val OFFLINE = Keyword("offline")
+  protected val FROM = Keyword("from")
 
   case class Keyword(key: String)
 

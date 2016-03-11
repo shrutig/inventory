@@ -41,15 +41,15 @@ class ConsoleCallBack(console: Console, list: IndexedSeq[ActorRef])
         findActor(itemReturn.terminal) ! itemReturn
       case purchase: String if purchase.startsWith("purchase") =>
         val purchase = SimpleParser.parsePurchase(input)
-        findActor(purchase.terminal) ! purchase
+        findActor(purchase.pOSTerminal) ! purchase
       case canPurchase: String if canPurchase.startsWith("canpurchase") =>
         val canPurchase = SimpleParser.parsePurchase(input)
-        findActor(canPurchase.terminal) ! canPurchase
+        findActor(canPurchase.pOSTerminal) ! (canPurchase, console)
       case offline: String if offline.startsWith("offline") =>
         val node = offline.split("offline ")(1)
         findActor(node) ! StopChat
       case online:String if online.startsWith("online") =>
-        val node = online.split("offline ")(1)
+        val node = online.split("online ")(1)
         findActor(node) ! StartChat
       case show: String if show.startsWith("show") =>
         val node = show.split("show ")(1)

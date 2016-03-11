@@ -1,4 +1,4 @@
-name := "CuratorRecipe"
+name := "inventory"
 
 version := "1.0"
 
