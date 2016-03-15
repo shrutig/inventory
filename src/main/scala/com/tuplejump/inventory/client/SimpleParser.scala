@@ -1,24 +1,8 @@
-package com.tuplejump.inventory
+package com.tuplejump.inventory.client
 
-import scala.util.parsing.combinator._
 import scala.language.implicitConversions
-
-sealed trait Command
-
-case class Add(itemCode: String,
-               terminal: String,
-               itemType: String,
-               itemMake: String,
-               quantity: Int) extends Command
-
-case class Purchase(itemCode: String,
-                    terminal: String,
-                    quantity: Int,
-                    pOSTerminal: String) extends Command
-
-case class Offline(terminal: String) extends Command
-
-case class Online(terminal: String) extends Command
+import scala.util.parsing.combinator._
+import com.tuplejump.inventory.service._
 
 object SimpleParser extends RegexParsers with JavaTokenParsers {
 
@@ -44,19 +28,6 @@ object SimpleParser extends RegexParsers with JavaTokenParsers {
       case s: Success[_] => s.get.asInstanceOf[Purchase]
       case e: Error => handleError(e, input)
       case f: Failure => handleFailure(f, input)
-    }
-
-  def parseOnOff(input: String): String =
-    parseAll(onOff, input.toLowerCase) match {
-      case s: Success[_] => s.get.asInstanceOf[String]
-      case e: Error => handleError(e, input)
-      case f: Failure => handleFailure(f, input)
-    }
-
-  lazy val onOff: Parser[String] =
-    (OFFLINE | ONLINE) ~ (TERMINAL ~> "=" ~> ident) ^^ {
-      case o ~ terminal =>
-        terminal
     }
 
   lazy val add: Parser[Add] =
@@ -89,8 +60,6 @@ object SimpleParser extends RegexParsers with JavaTokenParsers {
   protected val RETURN = Keyword("return")
   protected val PURCHASE = Keyword("purchase")
   protected val CAN_PURCHASE = Keyword("canpurchase")
-  protected val ONLINE = Keyword("online")
-  protected val OFFLINE = Keyword("offline")
   protected val FROM = Keyword("from")
 
   case class Keyword(key: String)

@@ -1,4 +1,4 @@
-package com.tuplejump.inventory
+package com.tuplejump.inventory.models
 
 //Changes made from NCounter in akka.crdt
 case class PNCounter(

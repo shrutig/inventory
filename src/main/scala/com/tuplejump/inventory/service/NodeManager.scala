@@ -1,12 +1,13 @@
-package com.tuplejump.inventory
+package com.tuplejump.inventory.service
 
 import scala.collection.mutable
-import akka.actor.{ActorRef, Props, FSM, Actor}
 import scala.concurrent.duration._
+import akka.actor.{Actor, ActorRef, FSM, Props}
 import akka.util.Timeout
 import org.jboss.aesh.console.Console
+import com.tuplejump.inventory.models._
 
-class NodeManager(terminal: String, inventory: InMemInventory)
+class NodeManager(terminal: String, inventory: Inventory)
   extends Actor with FSM[State, Data] {
 
   val terminalName = terminal
@@ -47,6 +48,8 @@ class NodeManager(terminal: String, inventory: InMemInventory)
     case Event(verify: VerifyAck) =>
       stay
     case Event(Sync) =>
+      stay
+    case Event(GoOffline) =>
       stay
   }
 
@@ -134,6 +137,10 @@ class NodeManager(terminal: String, inventory: InMemInventory)
     case Event(GoOffline, Nodes(nodes)) =>
       log.info("GoOffline event received while in Online state.")
       goto(Offline) using Nodes(nodes)
+    case Event(GoOnline) =>
+      stay
+    case Event(Start(nodes)) =>
+      stay
   }
 
   whenUnhandled {
@@ -144,8 +151,8 @@ class NodeManager(terminal: String, inventory: InMemInventory)
 }
 
 object NodeManager {
-  def props(terminal: String, inventory: InMemInventory): Props =
-    Props(new NodeManager(terminal: String, inventory: InMemInventory))
+  def props(terminal: String, inventory: Inventory): Props =
+    Props(new NodeManager(terminal: String, inventory: Inventory))
 }
 
 sealed trait State
@@ -159,4 +166,10 @@ sealed trait Data
 case object Uninitialized extends Data
 
 case class Nodes(nodes: List[ActorRef]) extends Data
+
+case class Change(code: String,
+                  terminal: String,
+                  PCounter: Option[Int],
+                  NCounter: Option[Int],
+                  POSTerminal: String)
 

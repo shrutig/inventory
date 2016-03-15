@@ -1,6 +1,7 @@
-package com.tuplejump.inventory
+package com.tuplejump.inventory.models
 
 import scala.collection.mutable
+import com.tuplejump.inventory.service.Change
 
 trait Inventory {
   def searchItem(code: String, terminal: String): Item

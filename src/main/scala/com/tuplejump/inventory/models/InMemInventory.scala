@@ -1,6 +1,7 @@
-package com.tuplejump.inventory
+package com.tuplejump.inventory.models
 
 import scala.collection.mutable
+import com.tuplejump.inventory.service.Change
 
 class InMemInventory(id: String) extends Inventory {
 

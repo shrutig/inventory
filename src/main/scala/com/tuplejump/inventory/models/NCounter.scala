@@ -1,4 +1,4 @@
-package com.tuplejump.inventory
+package com.tuplejump.inventory.models
 
 import java.util.UUID
 

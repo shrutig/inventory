@@ -1,4 +1,4 @@
-package com.tuplejump.inventory
+package com.tuplejump.inventory.models
 
 class Item(
            val `type`: String,
