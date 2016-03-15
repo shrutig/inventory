@@ -7,10 +7,7 @@ import akka.util.Timeout
 import org.jboss.aesh.console.Console
 import com.tuplejump.inventory.models._
 
-class NodeManager(terminal: String, inventory: Inventory)
-  extends Actor with FSM[State, Data] {
-
-  val terminalName = terminal
+class NodeManager extends Actor with FSM[State, Data] {
 
   import context._
 
@@ -25,35 +22,32 @@ class NodeManager(terminal: String, inventory: Inventory)
   startWith(Offline, Uninitialized)
 
   when(Offline) {
-    case Event(Start(nodes), Uninitialized) =>
+    case Event(Start(nodes, inventory), Uninitialized) =>
       log.info("Start received while in Offline state.")
-      goto(Online) using Nodes(nodes)
-    case Event(GoOnline, Nodes(nodes)) =>
+      goto(Online) using DataInv(nodes, inventory)
+    case Event(GoOnline, DataInv(nodes, inv)) =>
       log.info("GoOnline received while in Offline state.")
-      goto(Online) using Nodes(nodes)
-    case Event(add: Add, Nodes(nodes)) => addItem(add, nodes)
+      goto(Online) using DataInv(nodes, inv)
+    case Event(add: Add, DataInv(nodes, inv)) => addItem(add, nodes, inv)
       stay
-    case Event(purchase: Purchase, Nodes(nodes)) =>
-      placeOrder(purchase, nodes)
+    case Event(purchase: Purchase, DataInv(nodes, inv)) =>
+      placeOrder(purchase, nodes, inv)
       stay
     case Event(
-    (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console)) =>
+    (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console),
+    DataInv(nodes, inv)) =>
       console.getShell.out.println(
-        inventory.canPlaceOrder(code, quantity, iTerminal))
+        inv.canPlaceOrder(code, quantity, iTerminal))
       stay
-    case Event((Show, console: Console)) =>
-      show(console)
-    case Event(journal: Journal) =>
+    case Event((Show, console: Console), DataInv(nodes, inv)) =>
+      show(console, inv)
+    case Event(event: InterNodeEvent, DataInv(nodes, inv)) =>
       stay
-    case Event(verify: VerifyAck) =>
-      stay
-    case Event(Sync) =>
-      stay
-    case Event(GoOffline) =>
+    case Event(GoOffline, DataInv(nodes, inv)) =>
       stay
   }
 
-  def show(console: Console) = {
+  def show(console: Console, inventory: Inventory) = {
     val info = inventory.getInfo
     info.foreach {
       case ((itemCode, terminalId), qty) =>
@@ -64,7 +58,7 @@ class NodeManager(terminal: String, inventory: Inventory)
 
   def now = System.currentTimeMillis()
 
-  def addItem(add: Add, nodes: List[ActorRef]) = {
+  def addItem(add: Add, nodes: List[ActorRef], inventory: Inventory) = {
     inventory.addItem(new Item(
       add.itemType,
       add.itemMake,
@@ -84,8 +78,8 @@ class NodeManager(terminal: String, inventory: Inventory)
     }
   }
 
-  def placeOrder(purchase: Purchase, nodes: List[ActorRef]) = {
-    inventory.placeOrder(
+  def placeOrder(purchase: Purchase, nodes: List[ActorRef], inv: Inventory) = {
+    inv.placeOrder(
       purchase.itemCode,
       purchase.quantity,
       purchase.pOSTerminal,
@@ -97,49 +91,50 @@ class NodeManager(terminal: String, inventory: Inventory)
           purchase.itemCode,
           purchase.terminal,
           None,
-          Some(inventory.searchItem(purchase.itemCode, purchase.terminal)
+          Some(inv.searchItem(purchase.itemCode, purchase.terminal)
             .quantity.decrements.state(purchase.pOSTerminal)),
           purchase.pOSTerminal), now)))
     }
   }
 
   when(Online) {
-    case Event((Show, console: Console)) =>
-      show(console)
-    case Event(journal: Journal) =>
-      val conflicts = inventory.applyJournal(journal.list)
+    case Event((Show, console: Console), DataInv(nodes, inv)) =>
+      show(console, inv)
+    case Event(journal: Journal, DataInv(nodes, inv)) =>
+      val conflicts = inv.applyJournal(journal.list)
       if (conflicts.nonEmpty)
         sender() ! Conflict(conflicts)
       sender() ! VerifyAck(journal.list.last._1, journal.list.last._2)
       stay
-    case Event(Conflict(conflicts), Nodes(nodes)) =>
+    case Event(Conflict(conflicts), DataInv(nodes, inv)) =>
       log.info("conflicts found")
       //TODO resolve conflict: Tell customer and make items to 0 after checks
       stay
-    case Event(verify: VerifyAck) =>
+    case Event(verify: VerifyAck, DataInv(nodes, inv)) =>
       val currentJournal = journal(sender())
       val index = currentJournal.indexOf((verify.change, verify.time))
       journal(sender()) = currentJournal.drop(index)
       stay
-    case Event(Sync) =>
+    case Event(Sync, DataInv(nodes, inv)) =>
       journal.foreach(act => act._1 ! Journal(journal(act._1)))
       stay
-    case Event(add: Add, Nodes(nodes)) => addItem(add, nodes)
+    case Event(add: Add, DataInv(nodes, inv)) => addItem(add, nodes, inv)
       stay
-    case Event(purchase: Purchase, Nodes(nodes)) =>
-      placeOrder(purchase, nodes)
+    case Event(purchase: Purchase, DataInv(nodes, inv)) =>
+      placeOrder(purchase, nodes, inv)
       stay
     case Event(
-    (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console)) =>
+    (Purchase(code, iTerminal, quantity, pOSTerminal), console: Console),
+    DataInv(nodes, inv)) =>
       console.getShell.out.println(
-        inventory.canPlaceOrder(code, quantity, iTerminal))
+        inv.canPlaceOrder(code, quantity, iTerminal))
       stay
-    case Event(GoOffline, Nodes(nodes)) =>
+    case Event(GoOffline, DataInv(nodes, inv)) =>
       log.info("GoOffline event received while in Online state.")
-      goto(Offline) using Nodes(nodes)
-    case Event(GoOnline) =>
+      goto(Offline) using DataInv(nodes, inv)
+    case Event(GoOnline, DataInv(nodes, inv)) =>
       stay
-    case Event(Start(nodes)) =>
+    case Event(start: Start, DataInv(nodes, inv)) =>
       stay
   }
 
@@ -151,8 +146,8 @@ class NodeManager(terminal: String, inventory: Inventory)
 }
 
 object NodeManager {
-  def props(terminal: String, inventory: Inventory): Props =
-    Props(new NodeManager(terminal: String, inventory: Inventory))
+  def props(): Props =
+    Props(new NodeManager())
 }
 
 sealed trait State
@@ -165,7 +160,7 @@ sealed trait Data
 
 case object Uninitialized extends Data
 
-case class Nodes(nodes: List[ActorRef]) extends Data
+case class DataInv(nodes: List[ActorRef], inventory: Inventory) extends Data
 
 case class Change(code: String,
                   terminal: String,

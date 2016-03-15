@@ -11,6 +11,7 @@ object InventoryApplication {
     print("Enter number of POS terminals: ")
     val num = StdIn.readInt()
     val cli = new Client(num)
+    cli.start()
     val builder: SettingsBuilder = new SettingsBuilder().ansi(true)
     builder.logging(true).logfile(System.getProperty("user.dir") +
       System.getProperty("file.separator") + "akka.log")

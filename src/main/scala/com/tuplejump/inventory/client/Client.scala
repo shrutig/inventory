@@ -12,13 +12,14 @@ class Client(num: Int) {
   val system = ActorSystem("inventory")
   val list = {
     for (i <- 1 to num) yield {
-      system.actorOf(NodeManager.props("terminal" + i,
-        new InMemInventory("terminal" + i)).
+      system.actorOf(NodeManager.props().
         withDeploy(Deploy(scope = RemoteScope(address))), "terminal" + i)
     }
   }.toList
 
-  list.foreach(act => act ! Start(list diff List(act)))
+  def start() =
+    list.foreach(act =>
+      act ! Start(list diff List(act), new InMemInventory(act.path.name)))
 
   /*val cloud = system.actorOf(NodeManager.props("terminal" + 1,
        new InMemInventory("terminal" + 1)).

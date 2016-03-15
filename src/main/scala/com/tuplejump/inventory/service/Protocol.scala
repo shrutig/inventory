@@ -2,6 +2,7 @@ package com.tuplejump.inventory.service
 
 import scala.collection.mutable
 import akka.actor.ActorRef
+import com.tuplejump.inventory.models.Inventory
 
 sealed trait Event
 
@@ -9,7 +10,7 @@ trait Command extends Event
 
 trait StateChangeCommand extends Command
 
-case class Start(nodes: List[ActorRef]) extends StateChangeCommand
+case class Start(nodes: List[ActorRef], inv: Inventory) extends StateChangeCommand
 
 case object GoOnline extends StateChangeCommand
 
@@ -28,13 +29,13 @@ case class Purchase(itemCode: String,
                     quantity: Int,
                     pOSTerminal: String) extends Command
 
-trait InternalNodeEvent extends Event
+trait InterNodeEvent extends Event
 
-case object Sync extends InternalNodeEvent
+case object Sync extends InterNodeEvent
 
-case class VerifyAck(change: Change, time: Long) extends InternalNodeEvent
+case class VerifyAck(change: Change, time: Long) extends InterNodeEvent
 
-case class Journal(list: Seq[(Change, Long)]) extends InternalNodeEvent
+case class Journal(list: Seq[(Change, Long)]) extends InterNodeEvent
 
 case class Conflict(conflicts: mutable.ArrayBuffer[(String, String, Int)])
-  extends InternalNodeEvent
+  extends InterNodeEvent
