@@ -1,6 +1,6 @@
 package com.tuplejump.inventory.client
 
-import akka.actor.{ActorSystem, Address, Deploy, ActorRef}
+import akka.actor._
 import akka.remote.RemoteScope
 import org.jboss.aesh.console.Console
 import com.tuplejump.inventory.models.InMemInventory
@@ -12,7 +12,7 @@ class Client(num: Int) {
   val system = ActorSystem("inventory")
   val list = {
     for (i <- 1 to num) yield {
-      system.actorOf(NodeManager.props().
+      system.actorOf(Props(new NodeManager()).
         withDeploy(Deploy(scope = RemoteScope(address))), "terminal" + i)
     }
   }.toList

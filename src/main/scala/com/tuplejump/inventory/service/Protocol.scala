@@ -4,9 +4,7 @@ import scala.collection.mutable
 import akka.actor.ActorRef
 import com.tuplejump.inventory.models.Inventory
 
-sealed trait Event
-
-trait Command extends Event
+trait Command
 
 trait StateChangeCommand extends Command
 
@@ -29,13 +27,13 @@ case class Purchase(itemCode: String,
                     quantity: Int,
                     pOSTerminal: String) extends Command
 
-trait InterNodeEvent extends Event
+trait InterNodeCommand extends Command
 
-case object Sync extends InterNodeEvent
+case object Sync extends InterNodeCommand
 
-case class VerifyAck(change: Change, time: Long) extends InterNodeEvent
+case class VerifyAck(change: Change, time: Long) extends InterNodeCommand
 
-case class Journal(list: Seq[(Change, Long)]) extends InterNodeEvent
+case class Journal(list: Seq[(Change, Long)]) extends InterNodeCommand
 
 case class Conflict(conflicts: mutable.ArrayBuffer[(String, String, Int)])
-  extends InterNodeEvent
+  extends InterNodeCommand

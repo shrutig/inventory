@@ -41,7 +41,7 @@ class NodeManager extends Actor with FSM[State, Data] {
       stay
     case Event((Show, console: Console), DataInv(nodes, inv)) =>
       show(console, inv)
-    case Event(event: InterNodeEvent, DataInv(nodes, inv)) =>
+    case Event(event: InterNodeCommand, DataInv(nodes, inv)) =>
       stay
     case Event(GoOffline, DataInv(nodes, inv)) =>
       stay
@@ -143,11 +143,6 @@ class NodeManager extends Actor with FSM[State, Data] {
       log.warning("received unhandled request {} ", e)
       stay
   }
-}
-
-object NodeManager {
-  def props(): Props =
-    Props(new NodeManager())
 }
 
 sealed trait State
